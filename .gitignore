@@ -1,0 +1,6 @@
+# Ignorer les fichiers de configuration locaux et les dépendances
+.env
+vendor/
+/database.sqlite
+/public/css/style.css.map
+/public/js/app.js.map
