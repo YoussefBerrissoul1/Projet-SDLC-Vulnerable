@@ -22,14 +22,28 @@ if (file_exists($env_file)) {
 }
 
 // Configuration de la base de données
-$db_driver = getenv('DB_DRIVER') ?: 'sqlite';
-$db_path = getenv('DB_PATH') ?: __DIR__ . '/../database.sqlite';
+$db_driver = getenv('DB_DRIVER') ?: 'mysql';
 
 // Connexion à la base de données (intentionnellement simple et non sécurisée)
 function get_db_connection() {
-    global $db_driver, $db_path;
+    global $db_driver;
     try {
-        $db = new PDO($db_driver . ':' . $db_path);
+        if ($db_driver === 'mysql') {
+            $db_host = getenv('DB_HOST') ?: 'localhost';
+            $db_port = getenv('DB_PORT') ?: '3306';
+            $db_name = getenv('DB_NAME') ?: 'vulnerable_app';
+            $db_user = getenv('DB_USER') ?: 'root';
+            $db_password = getenv('DB_PASSWORD') ?: '';
+            
+            $dsn = "mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4";
+            $db = new PDO($dsn, $db_user, $db_password);
+        } else if ($db_driver === 'sqlite') {
+            $db_path = getenv('DB_PATH') ?: __DIR__ . '/../database.sqlite';
+            $db = new PDO('sqlite:' . $db_path);
+        } else {
+            throw new Exception("Unsupported database driver: $db_driver");
+        }
+        
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $db;
     } catch (PDOException $e) {
@@ -47,8 +61,14 @@ function escape_output($data) {
 }
 
 // Fonction utilitaire pour la redirection
+// Fonction utilitaire pour la redirection
 function redirect($url) {
-    header("Location: " . $url);
+    if (defined('WEB_ROOT')) {
+        $url = ltrim($url, '/');
+        header("Location: " . WEB_ROOT . $url);
+    } else {
+        header("Location: " . $url);
+    }
     exit();
 }
 ?>
